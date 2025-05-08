@@ -6,7 +6,7 @@ interface LogEntry {
   timestamp: string;
   level: LogLevel;
   message: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 class HealthAxisLogger {
@@ -23,7 +23,7 @@ class HealthAxisLogger {
     return HealthAxisLogger.instance;
   }
 
-  private log(level: LogLevel, message: string, context?: Record<string, any>) {
+  private log(level: LogLevel, message: string, context?: Record<string, unknown>) {
     const entry: LogEntry = {
       timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
       level,
@@ -53,19 +53,19 @@ class HealthAxisLogger {
     }
   }
 
-  info(message: string, context?: Record<string, any>) {
+  info(message: string, context?: Record<string, unknown>) {
     this.log('info', message, context);
   }
 
-  warn(message: string, context?: Record<string, any>) {
+  warn(message: string, context?: Record<string, unknown>) {
     this.log('warn', message, context);
   }
 
-  error(message: string, context?: Record<string, any>) {
+  error(message: string, context?: Record<string, unknown>) {
     this.log('error', message, context);
   }
 
-  debug(message: string, context?: Record<string, any>) {
+  debug(message: string, context?: Record<string, unknown>) {
     this.log('debug', message, context);
   }
 
@@ -78,4 +78,20 @@ class HealthAxisLogger {
   }
 }
 
-export const logger = HealthAxisLogger.getInstance(); 
+export const logger = HealthAxisLogger.getInstance();
+
+export const logInfo = (message: string, metadata?: Record<string, unknown>) => {
+  logger.info(message, metadata);
+};
+
+export const logWarn = (message: string, metadata?: Record<string, unknown>) => {
+  logger.warn(message, metadata);
+};
+
+export const logError = (message: string, error: Error, metadata?: Record<string, unknown>) => {
+  logger.error(message, { error: error.message, stack: error.stack, ...metadata });
+};
+
+export const logDebug = (message: string, metadata?: Record<string, unknown>) => {
+  logger.debug(message, metadata);
+}; 

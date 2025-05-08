@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { Send, Upload, FileText, Image } from 'lucide-react';
 import { User as UserType } from '../../types';
@@ -17,15 +17,13 @@ interface Message {
 }
 
 interface MessageThreadProps {
-  currentUser: UserType;
-  otherUser: UserType;
   messages: Message[];
-  onSendMessage: (content: string, attachments?: Message['attachments']) => void;
+  currentUser: UserType;
+  onSendMessage: (message: string) => void;
 }
 
 export default function MessageThread({
   currentUser,
-  otherUser,
   messages,
   onSendMessage
 }: MessageThreadProps) {
@@ -35,7 +33,7 @@ export default function MessageThread({
 
   const handleSendMessage = () => {
     if (newMessage.trim() || (attachments && attachments.length > 0)) {
-      onSendMessage(newMessage.trim(), attachments || []);
+      onSendMessage(newMessage.trim());
       setNewMessage('');
       setAttachments([]);
     }

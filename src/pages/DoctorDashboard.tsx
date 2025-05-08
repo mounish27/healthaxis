@@ -2,23 +2,22 @@ import { useState, useEffect } from 'react';
 import { Calendar, Users, Clock, Check, Calendar as CalendarIcon, User, FileText, MessageSquare, Search, Send } from 'lucide-react';
 import { format, isToday, isAfter } from 'date-fns';
 import toast from 'react-hot-toast';
-import { User as UserType, TIME_SLOTS, Appointment, MedicalRecord } from '../types';
+import { User as UserType, TIME_SLOTS, Medicine, FollowUp, Appointment, MedicalRecord } from '../types';
 import PrescriptionForm from '../components/PrescriptionForm';
 import FollowUpForm from '../components/FollowUpForm';
 import AppointmentCard from '../components/shared/AppointmentCard';
 import UserCard from '../components/shared/UserCard';
 import TimeSlotPicker from '../components/shared/TimeSlotPicker';
 
-interface Medication {
+interface Medication extends Omit<Medicine, 'timing' | 'duration'> {
   id: string;
   patientId: string;
   doctorId: string;
-  name: string;
-  dosage: string;
-  frequency: string;
   nextDose: string;
   prescribedBy: string;
   prescribedDate: string;
+  instructions?: string;
+  notes?: string;
 }
 
 export default function DoctorDashboard() {
@@ -83,7 +82,7 @@ export default function DoctorDashboard() {
 
         // Load messages
         const allMessages = JSON.parse(localStorage.getItem('messages') || '[]');
-        setMessages(allMessages.filter((msg: any) => msg.isDoctor));
+        setMessages(allMessages.filter((msg: { id: string; patientId: string; content: string; timestamp: string; isDoctor: boolean }) => msg.isDoctor));
       }
     };
 
@@ -175,7 +174,7 @@ export default function DoctorDashboard() {
     toast.success('Availability saved successfully!');
   };
 
-  const handlePrescriptionSubmit = (prescription: any) => {
+  const handlePrescriptionSubmit = (prescription: { medicines: Medicine[]; instructions: string; notes: string }) => {
     if (!selectedPatient) return;
 
     // Create medical record for the prescription
@@ -201,7 +200,7 @@ export default function DoctorDashboard() {
     setPatientRecords(updatedRecords);
 
     // Create medication records for each medicine in the prescription
-    const newMedications = prescription.medicines.map((medicine: any) => ({
+    const newMedications = prescription.medicines.map((medicine: Medicine) => ({
       id: crypto.randomUUID(),
       patientId: selectedPatient.id,
       doctorId: currentUser?.id,
@@ -229,7 +228,7 @@ export default function DoctorDashboard() {
     window.dispatchEvent(new Event('storage'));
   };
 
-  const handleFollowUpSubmit = (followUp: any) => {
+  const handleFollowUpSubmit = (followUp: Omit<FollowUp, 'id'>) => {
     if (!selectedAppointment) return;
 
     // Update appointment with follow-up
@@ -311,6 +310,8 @@ export default function DoctorDashboard() {
     setSelectedMedication(null);
     toast.success('Medication updated successfully!');
   };
+
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -973,10 +974,8 @@ export default function DoctorDashboard() {
 
       {showFollowUpForm && selectedAppointment && (
         <FollowUpForm
-          appointmentId={selectedAppointment.id}
-          doctors={doctors}
           onSubmit={handleFollowUpSubmit}
-          onClose={() => {
+          onCancel={() => {
             setShowFollowUpForm(false);
             setSelectedAppointment(null);
           }}

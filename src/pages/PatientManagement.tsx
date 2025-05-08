@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Calendar, Clock, Phone, Mail, MapPin, FileText, MessageSquare } from 'lucide-react';
+import { User, Calendar, Phone, Mail, MapPin, FileText, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { User as UserType, Appointment } from '../types';
 
@@ -164,4 +164,4 @@ export default function PatientManagement() {
       </div>
     </div>
   );
-} 
+}

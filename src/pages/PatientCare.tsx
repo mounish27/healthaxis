@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { MessageSquare, Activity, FlaskRound as Flask, Calendar, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { User, Appointment, MedicalRecord } from '../types';
 
 export default function PatientCare() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // We still need to set the user for filtering records, but don't need the variable directly
+  const [, setUser] = useState<User | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<{ [key: string]: User }>({});
   const [message, setMessage] = useState('');
@@ -17,7 +18,7 @@ export default function PatientCare() {
       const userStr = localStorage.getItem('currentUser');
       if (userStr) {
         const user = JSON.parse(userStr);
-        setCurrentUser(user);
+        setUser(user);
 
         // Load appointments
         const savedAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
@@ -71,8 +72,8 @@ export default function PatientCare() {
 
     // Get medicines from medical records
     const recordMedicines = medicalRecords
-      .filter(record => record.type === 'prescription' && record.details.prescription)
-      .flatMap(record => record.details.prescription.medicines);
+      .filter(record => record.type === 'prescription' && record.details?.prescription)
+      .flatMap(record => record.details.prescription?.medicines || []);
 
     // Combine and deduplicate medicines
     const allMedicines = [...appointmentMedicines, ...recordMedicines];
@@ -312,15 +313,15 @@ export default function PatientCare() {
                       </div>
                     )}
 
-                    {record.type === 'test' && record.details?.test && (
+                    {record.type === 'test' && (
                       <div className="mt-4">
                         <h4 className="font-medium">Test Results</h4>
-                        <p className="text-sm text-gray-500">Test Type: {record.details.test.type}</p>
-                        <p className="text-sm text-gray-500">Result: {record.details.test.result}</p>
-                        {record.details.test.notes && (
+                        <p className="text-sm text-gray-500">Test Type: {record.type}</p>
+                        <p className="text-sm text-gray-500">Result: {record.details?.notes || 'No results available'}</p>
+                        {record.details?.notes && (
                           <div className="mt-2">
                             <p className="text-sm font-medium">Notes:</p>
-                            <p className="text-sm text-gray-500">{record.details.test.notes}</p>
+                            <p className="text-sm text-gray-500">{record.details.notes}</p>
                           </div>
                         )}
                       </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -68,7 +68,7 @@ export default function Register() {
     try {
       // Check if email already exists
       const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const emailExists = users.some((user: any) => user.email === data.email);
+      const emailExists = users.some((user: { email: string }) => user.email === data.email);
       
       if (emailExists) {
         toast.error('Email already exists');
@@ -89,7 +89,7 @@ export default function Register() {
       
       toast.success('Registration successful! Please log in.');
       navigate('/login');
-    } catch (error) {
+    } catch (_error) {
       toast.error('Registration failed. Please try again.');
     }
   };

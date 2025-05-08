@@ -41,8 +41,7 @@ export default function PrescriptionForm({ appointmentId, onSubmit, onClose }: P
       duration,
       notes,
       prescribedDate: new Date().toISOString(),
-      prescribedBy: '',
-      severity: 'normal'
+      prescribedBy: ''
     };
 
     onSubmit(prescription);

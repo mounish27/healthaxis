@@ -3,7 +3,7 @@ import { Calendar, FileText, CheckCircle, XCircle, Video, Phone, Activity, Pill,
 import { format, isAfter, isBefore, isToday } from 'date-fns';
 import toast from 'react-hot-toast';
 import AIHealthChat from '../components/AIHealthChat';
-import { Appointment, User, MedicalRecord, Rating } from '../types';
+import { Appointment, User, MedicalRecord } from '../types';
 
 interface HealthMetric {
   bloodPressure: string;
@@ -65,30 +65,13 @@ interface Medication {
   patientId: string;
 }
 
-interface MedicalRecordDetails {
-  diagnosis?: string;
-  symptoms?: string[];
-  notes?: string;
-  prescription?: {
-    medications: Medication[];
-    instructions: string;
-  };
-  test?: {
-    name: string;
-    date: string;
-    results: string;
-  };
-}
 
 export default function PatientDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctors, setDoctors] = useState<{ [key: string]: User }>({});
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [showRatingForm, setShowRatingForm] = useState(false);
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([]);
-  const [notifications, setNotifications] = useState<{ id: string; message: string; type: 'info' | 'success' | 'warning' | 'error'; timestamp: Date }[]>([]);
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showHealthMetricModal, setShowHealthMetricModal] = useState(false);
   const [showFamilyMemberModal, setShowFamilyMemberModal] = useState(false);
@@ -128,16 +111,19 @@ export default function PatientDashboard() {
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [insuranceInfo, setInsuranceInfo] = useState<InsuranceInfo | null>(null);
 
-  const [videoConsultationStatus, setVideoConsultationStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
-  const [consultationToken, setConsultationToken] = useState<string>('');
-  const [consultationError, setConsultationError] = useState<string>('');
-
-  const [isInitialized, setIsInitialized] = useState(false);
-
   const [emergencyLocation, setEmergencyLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [emergencyContacts, setEmergencyContacts] = useState<{ name: string; number: string; type: string }[]>([]);
 
   const [editingFamilyMember, setEditingFamilyMember] = useState<{ id: string; name: string; relationship: string; phone: string } | null>(null);
+
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [showAppointmentDetails, setShowAppointmentDetails] = useState(false);
+  const [notifications, setNotifications] = useState<{
+    id: string;
+    message: string;
+    type: 'info' | 'warning' | 'error';
+    timestamp: Date;
+  }[]>([]);
 
   const handleEmergencyCall = () => {
     // Add emergency contact information
@@ -229,6 +215,14 @@ export default function PatientDashboard() {
       };
       localStorage.setItem('currentConsultation', JSON.stringify(consultationDetails));
 
+      // Add notification
+      setNotifications(prev => [...prev, {
+        id: crypto.randomUUID(),
+        message: 'Video consultation started',
+        type: 'info',
+        timestamp: new Date()
+      }]);
+
       // Open Google Meet in a new window
       window.open(meetUrl, '_blank', 'width=800,height=600');
       
@@ -241,6 +235,14 @@ export default function PatientDashboard() {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       toast.error('Failed to start consultation');
       logActivity('Video consultation failed', { error: errorMessage });
+      
+      // Add error notification
+      setNotifications(prev => [...prev, {
+        id: crypto.randomUUID(),
+        message: 'Failed to start video consultation',
+        type: 'error',
+        timestamp: new Date()
+      }]);
     }
   };
 
@@ -311,7 +313,6 @@ export default function PatientDashboard() {
         toast.error('Error loading dashboard data');
       } finally {
         setIsLoading(false);
-        setIsInitialized(true);
       }
     };
 
@@ -319,65 +320,9 @@ export default function PatientDashboard() {
     window.addEventListener('storage', loadData);
     return () => window.removeEventListener('storage', loadData);
   }, []);
-
   const handleViewDetails = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
-  };
-
-  const handleCloseDetails = () => {
-    setSelectedAppointment(null);
-  };
-
-  const handleCancelAppointment = (appointmentId: string) => {
-    if (window.confirm('Are you sure you want to cancel this appointment?')) {
-      const userStr = localStorage.getItem('currentUser');
-      if (userStr) {
-      const allAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
-      const updatedAppointments = allAppointments.filter((apt: Appointment) => apt.id !== appointmentId);
-        
-      localStorage.setItem('appointments', JSON.stringify(updatedAppointments));
-      setAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
-      setSelectedAppointment(null);
-      toast.success('Appointment cancelled successfully');
-      }
-    }
-  };
-
-  const handleRatingSubmit = (rating: Rating) => {
-    if (!selectedAppointment || !currentUser) return;
-
-    const updatedAppointments = appointments.map(apt =>
-      apt.id === selectedAppointment.id
-        ? { ...apt, rating }
-        : apt
-    );
-
-    // Update in localStorage
-    const allAppointments = JSON.parse(localStorage.getItem('appointments') || '[]');
-    const updatedAllAppointments = allAppointments.map((apt: Appointment) =>
-      apt.id === selectedAppointment.id
-        ? { ...apt, rating }
-        : apt
-    );
-    localStorage.setItem('appointments', JSON.stringify(updatedAllAppointments));
-
-    // Update doctor's ratings
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const updatedUsers = users.map((user: User) => {
-      if (user.id === selectedAppointment.doctorId) {
-        const ratings = user.ratings || [];
-        ratings.push(rating);
-        const averageRating = ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length;
-        return { ...user, ratings, averageRating };
-      }
-      return user;
-    });
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
-
-    setAppointments(updatedAppointments);
-    setShowRatingForm(false);
-    setSelectedAppointment(null);
-    toast.success('Rating submitted successfully!');
+    setShowAppointmentDetails(true);
   };
 
   const handleAddFamilyMember = () => {
@@ -515,6 +460,49 @@ export default function PatientDashboard() {
     return isAfter(aptDate, new Date()) && !isToday(aptDate);
   });
 
+  const handleCloseDetails = () => {
+    setShowAppointmentDetails(false);
+    setSelectedAppointment(null);
+  };
+
+  const handleCancelAppointment = async (appointmentId: string) => {
+    try {
+      const updatedAppointments = appointments.map(apt =>
+        apt.id === appointmentId
+          ? { ...apt, status: 'cancelled' as const }
+          : apt
+      );
+      
+      setAppointments(updatedAppointments);
+      localStorage.setItem('appointments', JSON.stringify(updatedAppointments));
+      toast.success('Appointment cancelled successfully');
+      
+      // Add notification
+      setNotifications(prev => [...prev, {
+        id: crypto.randomUUID(),
+        message: 'Appointment cancelled successfully',
+        type: 'info',
+        timestamp: new Date()
+      }]);
+      
+      // Log activity
+      logActivity('Appointment cancelled', { appointmentId });
+      
+      // Close details modal
+      handleCloseDetails();
+    } catch (error) {
+      console.error('Error cancelling appointment:', error);
+      toast.error('Failed to cancel appointment');
+      
+      // Add error notification
+      setNotifications(prev => [...prev, {
+        id: crypto.randomUUID(),
+        message: 'Failed to cancel appointment',
+        type: 'error',
+        timestamp: new Date()
+      }]);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -529,6 +517,76 @@ export default function PatientDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
+      {/* Notifications */}
+      {notifications.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 space-y-2">
+          {notifications.map(notification => (
+            <div
+              key={notification.id}
+              className={`p-4 rounded-lg shadow-lg ${
+                notification.type === 'error' ? 'bg-red-100 text-red-900' :
+                notification.type === 'warning' ? 'bg-yellow-100 text-yellow-900' :
+                'bg-blue-100 text-blue-900'
+              }`}
+            >
+              <p className="font-medium">{notification.message}</p>
+              <p className="text-sm opacity-75">
+                {format(notification.timestamp, 'h:mm a')}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Appointment Details Modal */}
+      {showAppointmentDetails && selectedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Appointment Details</h2>
+              <button
+                onClick={handleCloseDetails}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-gray-500">Doctor</p>
+                <p className="font-medium">Dr. {doctors[selectedAppointment.doctorId]?.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Date & Time</p>
+                <p className="font-medium">
+                  {format(new Date(`${selectedAppointment.date} ${selectedAppointment.time}`), 'MMMM d, yyyy h:mm a')}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Type</p>
+                <p className="font-medium capitalize">{selectedAppointment.type}</p>
+              </div>
+              {selectedAppointment.notes && (
+                <div>
+                  <p className="text-sm text-gray-500">Notes</p>
+                  <p className="font-medium">{selectedAppointment.notes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={() => handleCancelAppointment(selectedAppointment.id)}
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg border border-red-200"
+              >
+                Cancel Appointment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex justify-between items-center">

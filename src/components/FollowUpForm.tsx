@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { FollowUp, BLOOD_TEST_TYPES, SPECIALIZATIONS, User } from '../types';
+import { FollowUp, BLOOD_TEST_TYPES } from '../types';
 
-type FollowUpFormProps = {
-  appointmentId: string;
-  doctors: User[];
-  onSubmit: (followUp: FollowUp) => void;
-  onClose: () => void;
-};
+interface FollowUpFormProps {
+  onSubmit: (data: FollowUp) => void;
+  onCancel: () => void;
+}
 
-export default function FollowUpForm({ appointmentId, doctors, onSubmit, onClose }: FollowUpFormProps) {
+export default function FollowUpForm({ onSubmit, onCancel }: FollowUpFormProps) {
   const [type, setType] = useState<FollowUp['type']>('revisit');
   const [recommendedDate, setRecommendedDate] = useState('');
   const [notes, setNotes] = useState('');
@@ -96,11 +94,6 @@ export default function FollowUpForm({ appointmentId, doctors, onSubmit, onClose
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               >
                 <option value="">Select doctor</option>
-                {doctors.map((doctor) => (
-                  <option key={doctor.id} value={doctor.id}>
-                    Dr. {doctor.name} - {doctor.specialization}
-                  </option>
-                ))}
               </select>
             </div>
           )}
@@ -121,7 +114,7 @@ export default function FollowUpForm({ appointmentId, doctors, onSubmit, onClose
           <div className="flex justify-end space-x-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={onCancel}
               className="px-4 py-2 text-gray-700 hover:text-gray-900"
             >
               Cancel

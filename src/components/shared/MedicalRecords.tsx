@@ -9,7 +9,18 @@ interface MedicalRecord {
   doctorId: string;
   date: string;
   type: string;
-  details: Record<string, any>;
+  details: {
+    diagnosis?: string;
+    symptoms?: string[];
+    notes?: string;
+    prescription?: {
+      medications: Array<{
+        name: string;
+        dosage: string;
+        frequency: string;
+      }>;
+    };
+  };
 }
 
 interface MedicalRecordsProps {
@@ -97,8 +108,8 @@ export default function MedicalRecords({
                 onChange={(e) => {
                   try {
                     setNewRecord({ ...newRecord, details: JSON.parse(e.target.value) });
-                  } catch (error) {
-                    // Handle invalid JSON
+                  } catch (err) {
+                    console.error('Error fetching medical records:', err);
                   }
                 }}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"

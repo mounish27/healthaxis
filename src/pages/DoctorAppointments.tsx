@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { format, addDays, startOfWeek } from 'date-fns';
 import toast from 'react-hot-toast';
 import { User, Appointment } from '../types';
 
 export default function DoctorAppointments() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [, setCurrentUser] = useState<User | null>(null); // Keeping setter for use in useEffect
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date()));
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
@@ -48,7 +47,7 @@ export default function DoctorAppointments() {
 
   const handleConfirmAppointment = (appointmentId: string) => {
     const updatedAppointments = appointments.map(apt =>
-      apt.id === appointmentId ? { ...apt, status: 'confirmed' } : apt
+      apt.id === appointmentId ? { ...apt, status: 'confirmed' as const } : apt
     );
     
     // Update in localStorage

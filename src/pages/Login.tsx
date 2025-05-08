@@ -1,9 +1,8 @@
-import React from 'react';
+import { Calendar } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
-import { Stethoscope, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { logger } from '../utils/logger';
 
@@ -15,6 +14,8 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
+// LoginFormData interface removed as it was unused
+
 export default function Login() {
   const navigate = useNavigate();
   const { register, handleSubmit, watch } = useForm<LoginForm>({
@@ -24,7 +25,8 @@ export default function Login() {
     }
   });
 
-  const selectedRole = watch('role');
+  // We still need watch() for the form to work properly, but we don't need the selectedRole variable
+  watch('role');
 
   const onSubmit = async (data: LoginForm) => {
     try {
@@ -32,7 +34,7 @@ export default function Login() {
       
       // Get users from localStorage
       const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find((u: any) => 
+      const user = users.find((u: {email: string; password: string; role: string}) => 
         u.email === data.email && 
         u.password === data.password && 
         u.role === data.role
@@ -88,7 +90,6 @@ export default function Login() {
               </label>
               <input
                 id="email"
-                name="email"
                 type="email"
                 autoComplete="email"
                 required
@@ -103,7 +104,6 @@ export default function Login() {
               </label>
               <input
                 id="password"
-                name="password"
                 type="password"
                 autoComplete="current-password"
                 required

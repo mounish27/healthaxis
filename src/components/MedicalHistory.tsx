@@ -1,12 +1,30 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { FileText, Download } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { MedicalRecord, User } from '../types';
 
 type MedicalHistoryProps = {
   records: MedicalRecord[];
   doctors: { [key: string]: User };
 };
+
+interface MedicalRecord {
+  id: string;
+  date: string;
+  type: string;
+  details: {
+    diagnosis?: string;
+    symptoms?: string[];
+    notes?: string;
+    prescription?: {
+      medications: Array<{
+        name: string;
+        dosage: string;
+        frequency: string;
+      }>;
+    };
+  };
+}
 
 export default function MedicalHistory({ records, doctors }: MedicalHistoryProps) {
   const sortedRecords = [...records].sort((a, b) => 

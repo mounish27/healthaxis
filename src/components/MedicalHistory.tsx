@@ -1,30 +1,18 @@
-import React from 'react';
 import { format } from 'date-fns';
 import { Download } from 'lucide-react';
-import { MedicalRecord, User } from '../types';
+import { MedicalRecord, User, Medicine } from '../types';
+
+// Extended type to include attachments
+type MedicalRecordWithAttachments = MedicalRecord & {
+  attachments?: string[];
+};
 
 type MedicalHistoryProps = {
-  records: MedicalRecord[];
+  records: MedicalRecordWithAttachments[];
   doctors: { [key: string]: User };
 };
 
-interface MedicalRecord {
-  id: string;
-  date: string;
-  type: string;
-  details: {
-    diagnosis?: string;
-    symptoms?: string[];
-    notes?: string;
-    prescription?: {
-      medications: Array<{
-        name: string;
-        dosage: string;
-        frequency: string;
-      }>;
-    };
-  };
-}
+// Using MedicalRecord from ../types
 
 export default function MedicalHistory({ records, doctors }: MedicalHistoryProps) {
   const sortedRecords = [...records].sort((a, b) => 
@@ -79,10 +67,11 @@ export default function MedicalHistory({ records, doctors }: MedicalHistoryProps
                   </p>
                 </div>
               </div>
+              {/* Handle attachments if they exist */}
               {record.attachments && record.attachments.length > 0 && (
                 <button
                   className="flex items-center text-blue-600 hover:text-blue-800"
-                  onClick={() => window.open(record.attachments![0], '_blank')}
+                  onClick={() => window.open(record.attachments?.[0], '_blank')}
                 >
                   <Download className="h-4 w-4 mr-1" />
                   <span className="text-sm">Download</span>
@@ -96,7 +85,7 @@ export default function MedicalHistory({ records, doctors }: MedicalHistoryProps
                   {Object.entries(record.details).map(([test, value]) => (
                     <div key={test} className="flex justify-between text-sm">
                       <span className="text-gray-600">{test}</span>
-                      <span className="font-medium">{value}</span>
+                      <span className="font-medium">{String(value)}</span>
                     </div>
                   ))}
                 </div>
@@ -104,7 +93,7 @@ export default function MedicalHistory({ records, doctors }: MedicalHistoryProps
 
               {record.type === 'prescription' && (
                 <div className="space-y-2">
-                  {record.details.medicines.map((medicine: any, index: number) => (
+                  {record.details.prescription?.medicines.map((medicine: Medicine, index: number) => (
                     <div key={index} className="text-sm text-gray-600">
                       • {medicine.name} - {medicine.dosage} ({medicine.frequency})
                     </div>

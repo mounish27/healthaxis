@@ -89,7 +89,7 @@ export default function Register() {
       
       toast.success('Registration successful! Please log in.');
       navigate('/login');
-    } catch (_error) {
+    } catch {
       toast.error('Registration failed. Please try again.');
     }
   };
